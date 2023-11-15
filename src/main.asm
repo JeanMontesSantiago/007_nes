@@ -7,13 +7,15 @@
   RTI
 .endproc
 
-
 .proc nmi_handler
   LDA #$00
   STA OAMADDR
   LDA #$02
   STA OAMDMA
 	LDA #$00
+
+  JSR player_tick
+
 	STA $2005
 	STA $2005
   RTI
@@ -22,6 +24,8 @@
 .import reset_handler
 .import draw_background
 .import load_sprites
+.import init_player
+.import player_tick
 
 .export main
 .proc main
@@ -29,8 +33,9 @@
  JSR load_main_palette
 
  JSR draw_background
+; Subrutina para cargar sprites en pantalla, para entregable 2 del Proyecto
+;  JSR load_sprites
 
- JSR load_sprites
 
 vblankwait:       ; wait for another vblank before continuing
   BIT PPUSTATUS
