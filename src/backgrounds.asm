@@ -1,5 +1,6 @@
 .include "constants.inc"
 
+.export draw_background
 .proc draw_background
 
   LDX PPUSTATUS

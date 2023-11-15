@@ -1,10 +1,12 @@
 .include "constants.inc"
 .include "header.inc"
 
+
 .segment "CODE"
 .proc irq_handler
   RTI
 .endproc
+
 
 .proc nmi_handler
   LDA #$00
@@ -18,6 +20,8 @@
 .endproc
 
 .import reset_handler
+.import draw_background
+.import load_sprites
 
 .export main
 .proc main
@@ -25,6 +29,8 @@
  JSR load_main_palette
 
  JSR draw_background
+
+ JSR load_sprites
 
 vblankwait:       ; wait for another vblank before continuing
   BIT PPUSTATUS
@@ -37,6 +43,7 @@ vblankwait:       ; wait for another vblank before continuing
 
 forever:
   JMP forever
+
 .endproc
 
 .proc load_main_palette
@@ -54,9 +61,6 @@ copypalloop:
   rts
 
 .endproc
-
-.include "backgrounds.asm"
-
 
 .segment "VECTORS"
 .addr nmi_handler, reset_handler, irq_handler
