@@ -1,8 +1,20 @@
 .include "constants.inc"
 .include "header.inc"
 
+.segment "ZEROPAGE"
+pad1:     .res 1
+.exportzp pad1
+
 
 .segment "CODE"
+
+.import reset_handler
+.import draw_background
+.import load_sprites
+.import init_player
+.import player_tick
+.import read_controller1
+
 .proc irq_handler
   RTI
 .endproc
@@ -14,6 +26,7 @@
   STA OAMDMA
 	LDA #$00
 
+  JSR read_controller1
   JSR player_tick
 
 	STA $2005
@@ -21,16 +34,10 @@
   RTI
 .endproc
 
-.import reset_handler
-.import draw_background
-.import load_sprites
-.import init_player
-.import player_tick
-
 .export main
 .proc main
 
- JSR load_main_palette
+ JSR load_main_palettes
 
  JSR draw_background
 ; Subrutina para cargar sprites en pantalla, para entregable 2 del Proyecto
@@ -51,7 +58,7 @@ forever:
 
 .endproc
 
-.proc load_main_palette
+.proc load_main_palettes
   ; seek to the start of palette memory ($3F00-$3F1F)
   ldx #$3F
   stx PPUADDR
