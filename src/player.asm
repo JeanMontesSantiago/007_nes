@@ -9,7 +9,8 @@ player_dir:                     .res 1
 player_status:                  .res 1
 player_is_looking:              .res 1
 time_between_player_status:     .res 1
-player_y_before_jumping:        .res 1
+player_height_while_jumping:    .res 1
+is_jumping_flag:                .res 1
 .exportzp frames, current_running_sprite, player_x, player_y, player_dir
 .importzp pad1
 
@@ -24,8 +25,11 @@ player_y_before_jumping:        .res 1
   TYA
   PHA
 
-  LDA player_y
-  STA player_y_before_jumping
+  LDA #$00
+  STA is_jumping_flag
+
+  LDA #$00
+  STA player_height_while_jumping
 
   LDA #PLAYER_IS_STILL
   STA player_status
@@ -60,6 +64,7 @@ player_y_before_jumping:        .res 1
   TYA
   PHA
 
+  JSR jump ; tick if is jumping
   JSR check_button
   JSR draw_animation
 
@@ -121,6 +126,12 @@ check_up:
   LDA #160        
   CMP player_y
   BCS check_down
+  LDA is_jumping_flag
+  AND #JUMP_GOING_DOWN
+  BNE check_down
+  LDA is_jumping_flag
+  AND #JUMP_GOING_UP
+  BNE check_down
 
   DEC player_y
 
@@ -131,6 +142,13 @@ check_down:
   LDA pad1
   AND #BTN_DOWN
   BEQ check_A_button
+  LDA is_jumping_flag
+  AND #JUMP_GOING_DOWN
+  BNE check_A_button
+  LDA is_jumping_flag
+  AND #JUMP_GOING_UP
+  BNE check_A_button
+
 
   LDA #208
   CMP player_y
@@ -145,8 +163,15 @@ check_A_button:
   AND #BTN_A
   BEQ check_B_button
 
-  LDA #PLAYER_JUMPING
-  STA player_status
+
+  LDA is_jumping_flag
+  AND #%00000000
+  BNE already_jumping
+  LDA #JUMP_GOING_UP
+  STA is_jumping_flag
+
+already_jumping:
+  JSR jump
 
   JMP done_checking
   
@@ -184,7 +209,6 @@ done_checking:
   TYA
   PHA
 
-
   JSR update_pos
   JSR set_flip_attribute
 
@@ -196,6 +220,14 @@ done_checking:
 
 
 draw_player_looking_right:
+  LDA is_jumping_flag
+  AND #JUMP_GOING_DOWN
+  BNE load_is_jumping
+  LDA is_jumping_flag
+  AND #JUMP_GOING_UP
+  BNE load_is_jumping
+
+
   LDA player_status       ; Load button presses
   AND #PLAYER_IS_STILL   ; Filter out all but Left
   BEQ check_is_starting_to_run ; If result is zero, left not pressed
@@ -212,6 +244,18 @@ load_still_sprite:
   INX
   CPX #$09
   BNE load_still_sprite
+  JMP done_drawing
+
+load_is_jumping:
+  LDA JUMPING, X
+  STA $0201, Y
+  INY
+  INY
+  INY
+  INY
+  INX
+  CPX #$09
+  BNE load_is_jumping
   JMP done_drawing
   
 check_is_starting_to_run:
@@ -274,7 +318,7 @@ load_start_attacking_sprite:
 check_is_attacking:
   LDA player_status
   AND #PLAYER_ATTACKING
-  BEQ check_is_jumping
+  BEQ check_is_getting_hurt
   LDX #$00
   LDY #$00
 load_attacking_sprite:
@@ -287,24 +331,6 @@ load_attacking_sprite:
   INX
   CPX #$09
   BNE load_attacking_sprite
-  JMP done_drawing
-
-check_is_jumping:
-  LDA player_status
-  AND #PLAYER_JUMPING
-  BEQ check_is_getting_hurt
-  LDX #$00
-  LDY #$00
-load_is_jumping:
-  LDA JUMPING, X
-  STA $0201, Y
-  INY
-  INY
-  INY
-  INY
-  INX
-  CPX #$09
-  BNE load_is_jumping
   JMP done_drawing
 
 check_is_getting_hurt:
@@ -361,6 +387,13 @@ done_drawing:
   TYA
   PHA
 
+  LDA is_jumping_flag
+  AND #JUMP_GOING_DOWN
+  BNE load_is_jumping
+  LDA is_jumping_flag
+  AND #JUMP_GOING_UP
+  BNE load_is_jumping
+
   LDA player_status       ; Load button presses
   AND #PLAYER_IS_STILL   ; Filter out all but Left
   BEQ check_is_starting_to_run ; If result is zero, left not pressed
@@ -377,6 +410,18 @@ load_still_sprite:
   INX
   CPX #$09
   BNE load_still_sprite
+  JMP done_drawing
+
+load_is_jumping:
+  LDA JUMPING_FLIPPED, X
+  STA $0201, Y
+  INY
+  INY
+  INY
+  INY
+  INX
+  CPX #$09
+  BNE load_is_jumping
   JMP done_drawing
   
 check_is_starting_to_run:
@@ -439,7 +484,7 @@ load_start_attacking_sprite:
 check_is_attacking:
   LDA player_status
   AND #PLAYER_ATTACKING
-  BEQ check_is_jumping
+  BEQ check_is_getting_hurt
   LDX #$00
   LDY #$00
 load_attacking_sprite:
@@ -454,23 +499,6 @@ load_attacking_sprite:
   BNE load_attacking_sprite
   JMP done_drawing
 
-check_is_jumping:
-  LDA player_status
-  AND #PLAYER_JUMPING
-  BEQ check_is_getting_hurt
-  LDX #$00
-  LDY #$00
-load_is_jumping:
-  LDA JUMPING_FLIPPED, X
-  STA $0201, Y
-  INY
-  INY
-  INY
-  INY
-  INX
-  CPX #$09
-  BNE load_is_jumping
-  JMP done_drawing
 
 check_is_getting_hurt:
   LDA player_status
@@ -497,7 +525,7 @@ check_is_dead:
   LDX #$00
   LDY #$00
 load_is_dead:
-  LDA DEAD, X
+  LDA DEAD_FLIPPED, X
   STA $0201, Y
   INY
   INY
@@ -550,6 +578,60 @@ change_to_running:
   LSR player_status
 
 done_checking:
+
+
+  PLA
+  TAY
+  PLA
+  TAX
+  PLA
+  PLP
+  RTS
+.endproc
+
+.proc jump
+  PHP
+  PHA
+  TXA
+  PHA
+  TYA
+  PHA
+
+
+decrease_height:
+  LDA is_jumping_flag
+  AND #JUMP_GOING_DOWN
+  BEQ increase_height
+
+  LDA #00
+  CMP player_height_while_jumping
+  BCS reset
+  DEC player_height_while_jumping
+  INC player_y
+  JMP done_jumping
+
+reset:
+  LDA #$00
+  STA player_height_while_jumping
+  STA is_jumping_flag
+
+increase_height:
+  LDA is_jumping_flag
+  AND #JUMP_GOING_UP
+  BEQ done_jumping
+
+  LDA #MAX_JUMP_HEIGHT
+  CMP player_height_while_jumping
+  BCC going_down
+  INC player_height_while_jumping
+  DEC player_y
+  JMP done_jumping
+
+going_down:  
+  LDA #JUMP_GOING_DOWN
+  STA is_jumping_flag
+
+done_jumping:
 
 
   PLA
@@ -677,7 +759,7 @@ ATTACKING:
   .byte 51, 52, 53, 67, 68, 69, 83, 84, 85
 DEAD:
   .byte 54, 55, 56, 70, 71, 72, 86, 87, 88
-
+  
 STILL_SPRITES_FLIPPED:
   .byte 02, 01, 00, 18, 17, 16, 34, 33, 32
 START_RUNNING_FLIPPED:
@@ -692,3 +774,6 @@ START_ATTACKING_FLIPPED:
   .byte 50, 49, 48, 66, 65, 64, 82, 81, 80
 ATTACKING_FLIPPED:
   .byte 53, 52, 51, 69, 68, 67, 85, 84, 83
+DEAD_FLIPPED:
+  .byte 54, 55, 56, 70, 71, 72, 86, 87, 88
+
