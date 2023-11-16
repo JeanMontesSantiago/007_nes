@@ -14,6 +14,7 @@ pad1:     .res 1
 .import init_player
 .import player_tick
 .import read_controller1
+.import player_init
 
 .proc irq_handler
   RTI
@@ -42,6 +43,7 @@ pad1:     .res 1
  JSR draw_background
 ; Subrutina para cargar sprites en pantalla, para entregable 2 del Proyecto
 ;  JSR load_sprites
+ JSR player_init
 
 
 vblankwait:       ; wait for another vblank before continuing
