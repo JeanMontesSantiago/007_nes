@@ -66,7 +66,10 @@ is_jumping_flag:                .res 1
 
   JSR jump ; tick if is jumping
   JSR check_button
+  JSR check_physics
   JSR draw_animation
+
+
 
   PLA
   TAY
@@ -126,12 +129,18 @@ check_up:
   LDA #160        
   CMP player_y
   BCS check_down
+
   LDA is_jumping_flag
   AND #JUMP_GOING_DOWN
   BNE check_down
+
   LDA is_jumping_flag
   AND #JUMP_GOING_UP
   BNE check_down
+  
+  LDA #136
+  CMP player_y
+  BEQ check_A_button
 
   DEC player_y
 
@@ -148,6 +157,9 @@ check_down:
   LDA is_jumping_flag
   AND #JUMP_GOING_UP
   BNE check_A_button
+  LDA #136
+  CMP player_y
+  BEQ check_A_button
 
 
   LDA #208
@@ -607,8 +619,11 @@ decrease_height:
   CMP player_height_while_jumping
   BCS reset
   DEC player_height_while_jumping
+
   INC player_y
-  JMP done_jumping
+
+JMP done_jumping
+
 
 reset:
   LDA #$00
@@ -623,6 +638,7 @@ increase_height:
   LDA #MAX_JUMP_HEIGHT
   CMP player_height_while_jumping
   BCC going_down
+  
   INC player_height_while_jumping
   DEC player_y
   JMP done_jumping
@@ -739,6 +755,61 @@ load_attributes:
   CPX #$09
 
   BNE load_attributes
+.endproc
+
+.proc check_physics
+
+;   LDA #56
+;   CMP player_x
+;   BCS not_in_car_range
+;   LDA #160
+;   CMP player_x
+;   BCC not_in_car_range
+;   LDA #136
+;   CMP player_y
+;   BEQ done_jumping
+
+; not_in_car_range:
+
+
+
+  LDA #56 ; verifica si ya no esta encima del carro y deja caer al sprite
+  CMP player_x
+  BCS player_is_outside_the_car_range
+
+  LDA #144
+  CMP player_x
+  BCC player_is_outside_the_car_range
+
+  LDA #136
+  CMP player_y
+  BNE done_checking
+
+  LDA #JUMP_GOING_DOWN
+  AND is_jumping_flag
+  BEQ done_checking
+
+  LDA #$00
+  STA player_height_while_jumping
+
+  JMP done_checking
+
+player_is_outside_the_car_range:
+
+  LDA is_jumping_flag
+  AND #JUMP_GOING_DOWN
+  BNE done_checking
+  LDA is_jumping_flag
+  AND #JUMP_GOING_UP
+  BNE done_checking
+
+  LDA #160
+  CMP player_y
+  BCC done_checking
+  INC player_y
+  
+done_checking:
+
 .endproc
 
 
