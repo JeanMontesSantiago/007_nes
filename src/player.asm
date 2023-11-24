@@ -11,6 +11,7 @@ player_is_looking:              .res 1
 time_between_player_status:     .res 1
 player_height_while_jumping:    .res 1
 is_jumping_flag:                .res 1
+current_sprite:                 .res 1
 .exportzp frames, current_running_sprite, player_x, player_y, player_dir
 .importzp pad1
 
@@ -33,6 +34,9 @@ is_jumping_flag:                .res 1
 
   LDA #PLAYER_IS_STILL
   STA player_status
+
+  LDA #STILL_SPRITES
+  STA current_sprite
 
   LDA #LOOKING_RIGHT
   STA player_is_looking
@@ -224,331 +228,141 @@ done_checking:
   JSR update_pos
   JSR set_flip_attribute
 
+  LDA is_jumping_flag  ; check if is jumping, if it is then it will only load the jump sprite
+  AND #JUMP_GOING_DOWN
+  BNE load_is_jumping
+  LDA is_jumping_flag
+  AND #JUMP_GOING_UP
+  BNE load_is_jumping
+
+
+  LDA player_status       ; Load button presses
+  AND #PLAYER_IS_STILL   ; Filter out all but Left
+  BEQ check_is_starting_to_run ; If result is zero, left not pressed
+
+load_still_sprite:
+  LDA player_status
+  AND #PLAYER_IS_STILL
+  BEQ check_is_starting_to_run
+  LDA #STILL_SPRITES
+  JMP done_drawing
+
+load_is_jumping:
+  LDA #JUMPING_SPRITES
+  JMP done_drawing
+  
+check_is_starting_to_run:
+  LDA player_status       ; Load button presses
+  AND #PLAYER_START_RUNNING   ; Filter out all but Left
+  BEQ check_is_running ; If result is zero, left not pressed
+  LDA #START_RUNNING_SPRITES
+  JMP done_drawing
+
+check_is_running:
+  LDA player_status
+  AND #PLAYER_RUNNING
+  BEQ check_is_starting_to_attack
+  LDA #RUNNING_SPRITES
+  JMP done_drawing
+
+check_is_starting_to_attack:
+  LDA player_status
+  AND #PLAYER_START_ATTACKING
+  BEQ check_is_attacking
+  LDA #START_ATTACK_SPRITES
+  JMP done_drawing
+
+check_is_attacking:
+  LDA player_status
+  AND #PLAYER_ATTACKING
+  BEQ check_is_getting_hurt
+  LDA #ATTACKING_SPRITES
+  JMP done_drawing
+
+check_is_getting_hurt:
+  LDA player_status
+  AND #PLAYER_HURT
+  BEQ check_is_dead
+  LDA #HURTED_SPRITES
+  JMP done_drawing
+
+check_is_dead:
+  LDA player_status
+  AND #PLAYER_IS_DEAD
+  BEQ done_drawing
+  LDA #DEAD_SPRITES
+
+done_drawing:
+  LDX #$00
+  LDY #$00
+
+  PHA
   LDA player_is_looking
   AND #LOOKING_LEFT
-  BEQ draw_player_looking_right
-  JSR draw_animation_flipped
-  JMP done_drawing
-
-
-draw_player_looking_right:
-  LDA is_jumping_flag
-  AND #JUMP_GOING_DOWN
-  BNE load_is_jumping
-  LDA is_jumping_flag
-  AND #JUMP_GOING_UP
-  BNE load_is_jumping
-
-
-  LDA player_status       ; Load button presses
-  AND #PLAYER_IS_STILL   ; Filter out all but Left
-  BEQ check_is_starting_to_run ; If result is zero, left not pressed
-
-  LDX #$00
-  LDY #$00
-load_still_sprite:
-  LDA STILL_SPRITES, X
-  STA $0201, Y
-  INY
-  INY
-  INY
-  INY
-  INX
-  CPX #$09
-  BNE load_still_sprite
-  JMP done_drawing
-
-load_is_jumping:
-  LDA JUMPING, X
-  STA $0201, Y
-  INY
-  INY
-  INY
-  INY
-  INX
-  CPX #$09
-  BNE load_is_jumping
-  JMP done_drawing
-  
-check_is_starting_to_run:
-  LDA player_status       ; Load button presses
-  AND #PLAYER_START_RUNNING   ; Filter out all but Left
-  BEQ check_is_running ; If result is zero, left not pressed
-
-  LDX #$00
-  LDY #$00
-load_start_running_sprite:
-  LDA START_RUNNING, X
-  STA $0201, Y
-  INY
-  INY
-  INY
-  INY
-  INX
-  CPX #$09
-  BNE load_start_running_sprite
-  JMP done_drawing
-
-check_is_running:
-  LDA player_status
-  AND #PLAYER_RUNNING
-  BEQ check_is_starting_to_attack
-
-  LDX #$00
-  LDY #$00
-load_running_sprite:
-  LDA RUNNING, X
-  STA $0201, Y
-  INY
-  INY
-  INY
-  INY
-  INX
-  CPX #$09
-  BNE load_running_sprite
-  JMP done_drawing
-
-check_is_starting_to_attack:
-  LDA player_status
-  AND #PLAYER_START_ATTACKING
-  BEQ check_is_attacking
-
-  LDX #$00
-  LDY #$00
-load_start_attacking_sprite:
-  LDA START_ATTACKING, X
-  STA $0201, Y
-  INY
-  INY
-  INY
-  INY
-  INX
-  CPX #$09
-  BNE load_start_attacking_sprite
-  JMP done_drawing
-
-check_is_attacking:
-  LDA player_status
-  AND #PLAYER_ATTACKING
-  BEQ check_is_getting_hurt
-  LDX #$00
-  LDY #$00
-load_attacking_sprite:
-  LDA ATTACKING, X
-  STA $0201, Y
-  INY
-  INY
-  INY
-  INY
-  INX
-  CPX #$09
-  BNE load_attacking_sprite
-  JMP done_drawing
-
-check_is_getting_hurt:
-  LDA player_status
-  AND #PLAYER_HURT
-  BEQ check_is_dead
-  LDX #$00
-  LDY #$00
-load_is_getting_hurt:
-  LDA HURTED, X
-  STA $0201, Y
-  INY
-  INY
-  INY
-  INY
-  INX
-  CPX #$09
-  BNE load_is_getting_hurt
-  JMP done_drawing
-  
-check_is_dead:
-  LDA player_status
-  AND #PLAYER_IS_DEAD
-  BEQ done_drawing
-  LDX #$00
-  LDY #$00
-load_is_dead:
-  LDA DEAD, X
-  STA $0201, Y
-  INY
-  INY
-  INY
-  INY
-  INX
-  CPX #$09
-  BNE load_is_dead
-  JMP done_drawing
-
-done_drawing:
   PLA
-  TAY
-  PLA
-  TAX
-  PLA
-  PLP
-  RTS
-.endproc
+  BEQ load_sprite_right
 
-.proc draw_animation_flipped
-  PHP
-  PHA
-  TXA
-  PHA
-  TYA
-  PHA
-
-  LDA is_jumping_flag
-  AND #JUMP_GOING_DOWN
-  BNE load_is_jumping
-  LDA is_jumping_flag
-  AND #JUMP_GOING_UP
-  BNE load_is_jumping
-
-  LDA player_status       ; Load button presses
-  AND #PLAYER_IS_STILL   ; Filter out all but Left
-  BEQ check_is_starting_to_run ; If result is zero, left not pressed
-
-  LDX #$00
-  LDY #$00
-load_still_sprite:
-  LDA STILL_SPRITES_FLIPPED, X
+  CLC
+  ADC #$02
+load_sprite_flipped:
   STA $0201, Y
+  INY 
   INY
+  INY
+  INY
+  SEC 
+  SBC #$01
+
+  STA $0201, Y
+  INY 
+  INY
+  INY
+  INY
+  SEC
+  SBC #$01
+
+  STA $0201, Y
+  INY 
   INY
   INY
   INY
   INX
-  CPX #$09
-  BNE load_still_sprite
-  JMP done_drawing
+  CLC
+  ADC #18
 
-load_is_jumping:
-  LDA JUMPING_FLIPPED, X
+  CPX #$03
+  BNE load_sprite_flipped
+  JMP done
+
+load_sprite_right:
+  CLC
   STA $0201, Y
+  INY 
   INY
+  INY
+  INY
+  ADC #$01
+
+  STA $0201, Y
+  INY 
+  INY
+  INY
+  INY
+  ADC #$01
+
+  STA $0201, Y
+  INY 
   INY
   INY
   INY
   INX
-  CPX #$09
-  BNE load_is_jumping
-  JMP done_drawing
-  
-check_is_starting_to_run:
-  LDA player_status       ; Load button presses
-  AND #PLAYER_START_RUNNING   ; Filter out all but Left
-  BEQ check_is_running ; If result is zero, left not pressed
+  ADC #14
 
-  LDX #$00
-  LDY #$00
-load_start_running_sprite:
-  LDA START_RUNNING_FLIPPED, X
-  STA $0201, Y
-  INY
-  INY
-  INY
-  INY
-  INX
-  CPX #$09
-  BNE load_start_running_sprite
-  JMP done_drawing
-
-check_is_running:
-  LDA player_status
-  AND #PLAYER_RUNNING
-  BEQ check_is_starting_to_attack
-
-  LDX #$00
-  LDY #$00
-load_running_sprite:
-  LDA RUNNING_FLIPPED, X
-  STA $0201, Y
-  INY
-  INY
-  INY
-  INY
-  INX
-  CPX #$09
-  BNE load_running_sprite
-  JMP done_drawing
-
-check_is_starting_to_attack:
-  LDA player_status
-  AND #PLAYER_START_ATTACKING
-  BEQ check_is_attacking
-
-  LDX #$00
-  LDY #$00
-load_start_attacking_sprite:
-  LDA START_ATTACKING_FLIPPED, X
-  STA $0201, Y
-  INY
-  INY
-  INY
-  INY
-  INX
-  CPX #$09
-  BNE load_start_attacking_sprite
-  JMP done_drawing
-
-check_is_attacking:
-  LDA player_status
-  AND #PLAYER_ATTACKING
-  BEQ check_is_getting_hurt
-  LDX #$00
-  LDY #$00
-load_attacking_sprite:
-  LDA ATTACKING_FLIPPED, X
-  STA $0201, Y
-  INY
-  INY
-  INY
-  INY
-  INX
-  CPX #$09
-  BNE load_attacking_sprite
-  JMP done_drawing
+  CPX #$03
+  BNE load_sprite_right
 
 
-check_is_getting_hurt:
-  LDA player_status
-  AND #PLAYER_HURT
-  BEQ check_is_dead
-  LDX #$00
-  LDY #$00
-load_is_getting_hurt:
-  LDA HURTED_FLIPPED, X
-  STA $0201, Y
-  INY
-  INY
-  INY
-  INY
-  INX
-  CPX #$09
-  BNE load_is_getting_hurt
-  JMP done_drawing
-  
-check_is_dead:
-  LDA player_status
-  AND #PLAYER_IS_DEAD
-  BEQ done_drawing
-  LDX #$00
-  LDY #$00
-load_is_dead:
-  LDA DEAD_FLIPPED, X
-  STA $0201, Y
-  INY
-  INY
-  INY
-  INY
-  INX
-  CPX #$09
-  BNE load_is_dead
-  JMP done_drawing
-
-done_drawing:
+done:
   PLA
   TAY
   PLA
@@ -648,7 +462,6 @@ going_down:
   STA is_jumping_flag
 
 done_jumping:
-
 
   PLA
   TAY
@@ -758,21 +571,6 @@ load_attributes:
 .endproc
 
 .proc check_physics
-
-;   LDA #56
-;   CMP player_x
-;   BCS not_in_car_range
-;   LDA #160
-;   CMP player_x
-;   BCC not_in_car_range
-;   LDA #136
-;   CMP player_y
-;   BEQ done_jumping
-
-; not_in_car_range:
-
-
-
   LDA #56 ; verifica si ya no esta encima del carro y deja caer al sprite
   CMP player_x
   BCS player_is_outside_the_car_range
@@ -811,40 +609,3 @@ player_is_outside_the_car_range:
 done_checking:
 
 .endproc
-
-
-.segment "RODATA"
-STILL_SPRITES:
-  .byte 00, 01, 02, 16, 17, 18, 32, 33, 34 
-START_RUNNING:
-  .byte 03, 04, 05, 19, 20, 21, 35, 36, 37
-RUNNING:
-  .byte 06, 07, 08, 22, 23, 24, 38, 39, 40
-JUMPING:
-  .byte 09, 10, 11, 25, 26, 27, 41, 42, 43
-HURTED:
-  .byte 12, 13, 14, 28, 29, 30, 44, 45, 46
-START_ATTACKING:
-  .byte 48, 49, 50, 64, 65, 66, 80, 81, 82
-ATTACKING:
-  .byte 51, 52, 53, 67, 68, 69, 83, 84, 85
-DEAD:
-  .byte 54, 55, 56, 70, 71, 72, 86, 87, 88
-  
-STILL_SPRITES_FLIPPED:
-  .byte 02, 01, 00, 18, 17, 16, 34, 33, 32
-START_RUNNING_FLIPPED:
-  .byte 05, 04, 03, 21, 20, 19, 37, 36, 35
-RUNNING_FLIPPED:
-  .byte 08, 07, 06, 24, 23, 22, 40, 39, 38
-JUMPING_FLIPPED:
-  .byte 11, 10, 09, 27, 26, 25, 43, 42, 41
-HURTED_FLIPPED:
-  .byte 14, 13, 12, 30, 29, 28, 46, 45, 44
-START_ATTACKING_FLIPPED:
-  .byte 50, 49, 48, 66, 65, 64, 82, 81, 80
-ATTACKING_FLIPPED:
-  .byte 53, 52, 51, 69, 68, 67, 85, 84, 83
-DEAD_FLIPPED:
-  .byte 54, 55, 56, 70, 71, 72, 86, 87, 88
-
