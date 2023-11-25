@@ -15,6 +15,8 @@ player_is_looking:              .res 1
 
 .import init_player_state
 .import tick_player_state
+.import init_player_position
+.import tick_player_position
 
 .export player_init
 .proc player_init
@@ -27,11 +29,7 @@ player_is_looking:              .res 1
 
   JSR init_player_state
   JSR tick_player_state
-
-  LDA #184
-  STA player_y
-  LDA #112
-  STA player_x
+  JSR init_player_position
 
   PLA
   TAY
@@ -54,8 +52,9 @@ player_is_looking:              .res 1
 
   JSR check_button
   JSR set_flip_attribute
-  JSR update_pos
   JSR tick_player_state
+  JSR tick_player_position
+
 
   PLA
   TAY
@@ -81,11 +80,9 @@ player_is_looking:              .res 1
   LDA #LOOKING_LEFT
   STA player_is_looking
 
-  LDA #4         ; check left wall
-  CMP player_x
-  BCS check_right
+  LDA #PLAYER_IS_MOVING_LEFT
+  STA player_dir
 
-  DEC player_x  ; If the branch is not taken, move player left
   LDA #PLAYER_RUNNING_STATE
   STA player_state
 
@@ -99,11 +96,9 @@ check_right:
   LDA #LOOKING_RIGHT
   STA player_is_looking
 
-  LDA #224      ; check right wall
-  CMP player_x
-  BCC check_up
+  LDA #PLAYER_IS_MOVING_RIGHT
+  STA player_dir
 
-  INC player_x
   LDA #PLAYER_RUNNING_STATE
   STA player_state
 
@@ -114,15 +109,9 @@ check_up:
   AND #BTN_UP
   BEQ check_down
 
-  LDA #160        
-  CMP player_y
-  BCS check_down
+  LDA #PLAYER_IS_MOVING_UP
+  STA player_dir
 
-  LDA player_state
-  AND #PLAYER_JUMPING_STATE
-  BNE done_checking
-  
-  DEC player_y
   LDA #PLAYER_RUNNING_STATE
   STA player_state
 
@@ -133,15 +122,9 @@ check_down:
   AND #BTN_DOWN
   BEQ check_A_button
   
-  LDA #208
-  CMP player_y
-  BCC check_A_button
+  LDA #PLAYER_IS_MOVING_DOWN
+  STA player_dir
 
-  LDA player_state
-  AND #PLAYER_JUMPING_STATE
-  BNE done_checking
-
-  INC player_y
   LDA #PLAYER_RUNNING_STATE
   STA player_state
 
@@ -168,6 +151,9 @@ check_B_button:
   JMP done_checking
 
 not_button_pressed:
+  LDA #PLAYER_NOT_MOVING
+  STA player_dir
+
   LDA #PLAYER_STILL_STATE
   STA player_state
 
@@ -179,93 +165,6 @@ done_checking:
   PLA
   PLP
   RTS
-.endproc
-
-
-.proc update_pos
-  PHP
-  PHA
-  TXA
-  PHA
-  TYA
-  PHA
-   ; first row
-  LDA player_y
-  STA $0200
-  LDA player_x
-  STA $0203
-  LDA player_y
-  STA $0204
-  LDA player_x
-  CLC
-  ADC #$08
-  STA $0207
-  LDA player_y
-  STA $0208
-  LDA player_x
-  CLC
-  ADC #$10
-  STA $020b
-
-  ; second row
-  LDA player_y
-  CLC
-  ADC #$08
-  STA $020c
-  LDA player_x
-  STA $020f
-  LDA player_y
-  CLC
-  ADC #$08
-  STA $0210
-  LDA player_x
-  CLC
-  ADC #$08
-  STA $0213
-  LDA player_y
-  CLC
-  ADC #$08
-  STA $0214
-  LDA player_x
-  CLC
-  ADC #$10
-  STA $0217
-
-  ; third row
-  LDA player_y
-  CLC
-  ADC #$10
-  STA $0218
-  LDA player_x
-  STA $021b
-  LDA player_y
-  CLC
-  ADC #$10
-  STA $021c
-  LDA player_x
-  CLC
-  ADC #$08
-  STA $021f
-  LDA player_y
-  CLC
-  ADC #$10
-  STA $0220
-  LDA player_x
-  CLC
-  ADC #$10
-  STA $0223
-
-  PLA
-  TAY
-  PLA
-  TAX
-  PLA
-  PLP
-  RTS
-.endproc
-
-.proc update_state
-
 .endproc
 
 .proc set_flip_attribute

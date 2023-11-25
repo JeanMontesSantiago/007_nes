@@ -6,11 +6,13 @@ current_sprite:                     .res 1
 counter_to_change_between_sprites:  .res 1 ; variable to know how fast will change between sprite, for example, between the two running sprites
 current_height_while_jumping:       .res 1
 .importzp player_is_looking, player_x, player_y, player_state
+.exportzp player_prev_state
 
 .segment "CODE"
 ; Constants to help the inner working of the states
 CHANGE_SPRITE_COUNTER    = 05
-MAX_HEIGHT_FOR_JUMP      = 32
+MAX_HEIGHT_FOR_JUMP      = 64
+JUMP_SPEED               = 02
 
 ; Initialice all variables need it to use for the diference states
 .export init_player_state
@@ -189,22 +191,38 @@ done:
 
   LDA #PLAYER_JUMPING_STATE
   STA player_state
+
   LDA #PLAYER_JUMPING_SPRITES
   STA current_sprite
+  
   LDA current_height_while_jumping
   CMP #MAX_HEIGHT_FOR_JUMP
-  BCC Going_down
-
-Going_up:
-  INC player_y
-  INC current_height_while_jumping
-  JMP done
+  BCC Going_up
 
 Going_down:
-  DEC player_y
-  INC current_height_while_jumping
-  JMP done
+  LDA player_y
+  CLC
+  ADC #JUMP_SPEED
+  STA player_y
 
+  LDA current_height_while_jumping
+  CLC
+  ADC #JUMP_SPEED
+  STA current_height_while_jumping
+
+  JMP done
+Going_up:
+  LDA player_y
+  SEC
+  SBC #JUMP_SPEED
+  STA player_y
+
+  LDA current_height_while_jumping
+  CLC
+  ADC #JUMP_SPEED
+  STA current_height_while_jumping
+
+  JMP done
 reset:
   LDA #$00
   STA current_height_while_jumping
