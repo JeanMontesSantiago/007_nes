@@ -3,7 +3,8 @@
 
 .segment "ZEROPAGE"
 pad1:     .res 1
-.exportzp pad1
+pad2:     .res 1
+.exportzp pad1, pad2
 
 
 .segment "CODE"
