@@ -53,6 +53,10 @@ CAR_DOWN_LIMIT      = 168
   JSR check_if_player_is_jumping
   JSR check_if_player_in_vehicle_range
 
+  LDA player_state
+  AND #PLAYER_ATTACKING_STATE
+  BNE done
+
 
 check_left:
   LDA player_prev_dir

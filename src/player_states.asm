@@ -59,14 +59,15 @@ CHANGE_SPRITE_COUNTER    = 05
 
   LDA player_prev_state
   AND #PLAYER_JUMPING_STATE
-  BEQ check_still_state
+  BEQ not_jumping
   LDA #PLAYER_JUMPING_STATE
   STA player_state
 
+not_jumping:
   LDA player_prev_state
-  AND #PLAYER_IS_DEAD_STATE
+  AND #PLAYER_ATTACKING_STATE
   BEQ check_still_state
-  LDA #PLAYER_IS_DEAD_STATE
+  LDA #PLAYER_ATTACKING_STATE
   STA player_state
 
 check_still_state:
@@ -88,9 +89,17 @@ check_running_state:
 check_jumping_state:
   LDA player_state
   AND #PLAYER_JUMPING_STATE
-  BEQ check_dead_state
+  BEQ check_attacking_state
 
   JSR player_is_jumping_state
+  JMP done
+
+check_attacking_state:
+  LDA player_state
+  AND #PLAYER_ATTACKING_STATE
+  BEQ check_dead_state
+
+  JSR player_is_attacking_state
   JMP done
 
 check_dead_state:
@@ -229,6 +238,74 @@ reset:
   STA current_height_while_jumping
   LDA #PLAYER_STILL_STATE
   STA player_state
+
+done:
+  JSR draw_player_state
+
+  PLA
+  TAY
+  PLA
+  TAX
+  PLA
+  PLP
+  RTS
+.endproc
+
+.proc player_is_attacking_state
+  PHP
+  PHA
+  TXA
+  PHA
+  TYA
+  PHA
+
+  LDA #CHANGE_SPRITE_COUNTER              ; check to restart the state machine when counter is three times he change_sprite_counter constant
+  CLC
+  ADC #CHANGE_SPRITE_COUNTER
+  CLC
+  ADC #CHANGE_SPRITE_COUNTER
+  CMP counter_to_change_between_sprites
+  BEQ reset
+
+  LDA #PLAYER_ATTACKING_STATE
+  STA player_state
+
+  LDA #PLAYER_ATTACKING_STATE
+  STA current_sprite
+
+  LDA #CHANGE_SPRITE_COUNTER             ; state 3 when counter is 2/3 of change sprite counter sprite
+  CLC
+  ADC #CHANGE_SPRITE_COUNTER
+  CMP counter_to_change_between_sprites
+  BCC attacking_sprite_3 ; check
+
+  LDA #CHANGE_SPRITE_COUNTER
+  CMP counter_to_change_between_sprites
+  BCC attacking_sprite_2
+
+attacking_sprite_1: 
+  LDA #PLAYER_START_ATTACK_SPRITES
+  STA current_sprite
+  INC counter_to_change_between_sprites
+  JMP done
+
+attacking_sprite_2:
+  LDA #PLAYER_ATTACKING_SPRITES
+  STA current_sprite
+  INC counter_to_change_between_sprites
+  JMP done
+
+attacking_sprite_3:
+  LDA #PLAYER_START_ATTACK_SPRITES
+  STA current_sprite
+  INC counter_to_change_between_sprites
+  JMP done
+
+reset:
+  LDA #PLAYER_STILL_STATE
+  STA player_state
+  LDA #$00
+  STA counter_to_change_between_sprites
 
 done:
   JSR draw_player_state

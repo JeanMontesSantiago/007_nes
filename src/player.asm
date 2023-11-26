@@ -143,7 +143,7 @@ check_B_button:
   AND #BTN_B
   BEQ not_button_pressed
 
-  LDA #PLAYER_IS_DEAD_STATE
+  LDA #PLAYER_ATTACKING_STATE
   STA player_state
 
   JMP done_checking
