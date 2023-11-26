@@ -1,15 +1,22 @@
 .include "constants.inc"
 
 .segment "ZEROPAGE"
-
+player_prev_dir:    .res 1
 .importzp player_x, player_y, player_state, player_prev_state, player_dir
+.exportzp player_prev_dir
 
 .segment "CODE"
-PLAYER_SPEED    = 2
-LEFT_WALL       = 4
-RIGHT_WALL      = 230
-UP_LIMIT        = 160
-DOWN_LIMIT      = 210
+PLAYER_SPEED        = 2
+
+LEFT_WALL           = 4
+RIGHT_WALL          = 230
+UP_LIMIT            = 160
+DOWN_LIMIT          = 210
+
+CAR_LEFT_LIMIT      = 56
+CAR_RIGHT_LIMIT     = 144
+CAR_UP_LIMIT        = 136
+CAR_DOWN_LIMIT      = 168
 
 .export init_player_position
 .proc init_player_position
@@ -43,7 +50,12 @@ DOWN_LIMIT      = 210
   TYA
   PHA
 
-  LDA player_dir
+  JSR check_if_player_is_jumping
+  JSR check_if_player_in_vehicle_range
+
+
+check_left:
+  LDA player_prev_dir
   AND #PLAYER_IS_MOVING_LEFT
   BEQ check_right
 
@@ -58,7 +70,7 @@ DOWN_LIMIT      = 210
   JMP done
 
 check_right:
-  LDA player_dir
+  LDA player_prev_dir
   AND #PLAYER_IS_MOVING_RIGHT
   BEQ check_up
 
@@ -73,7 +85,7 @@ check_right:
   JMP done
 
 check_up:
-  LDA player_dir
+  LDA player_prev_dir
   AND #PLAYER_IS_MOVING_UP
   BEQ check_down
 
@@ -92,7 +104,7 @@ check_up:
   JMP done
 
 check_down:
-  LDA player_dir
+  LDA player_prev_dir
   AND #PLAYER_IS_MOVING_DOWN
   BEQ done
   
@@ -108,8 +120,11 @@ check_down:
   BCS done
   STA player_y
 
+
 done:
-JSR update_pos
+  LDA player_dir
+  STA player_prev_dir
+  JSR update_pos
 
   PLA
   TAY
@@ -120,8 +135,130 @@ JSR update_pos
   RTS
 .endproc
 
+.proc check_if_player_is_jumping
+  PHP
+  PHA
+  TXA
+  PHA
+  TYA
+  PHA
 
+  LDA player_state
+  AND #PLAYER_JUMPING_STATE
+  BEQ done
 
+Going_down:
+  LDA player_dir
+  AND #PLAYER_IS_MOVING_DOWN
+  BEQ Going_up
+
+  LDA player_y
+  CLC
+  ADC #JUMP_SPEED
+  STA player_y
+
+  JMP done
+Going_up:
+  LDA player_y
+  SEC
+  SBC #JUMP_SPEED
+  STA player_y
+
+done:
+  PLA
+  TAY
+  PLA
+  TAX
+  PLA
+  PLP
+  RTS
+.endproc
+
+.proc check_if_player_in_vehicle_range
+  PHP
+  PHA
+  TXA
+  PHA
+  TYA
+  PHA
+
+;   LDA player_prev_state
+;   AND #PLAYER_JUMPING_STATE
+;   BEQ done
+
+  LDA player_dir
+  AND #PLAYER_IS_MOVING_DOWN
+  BEQ done
+
+  LDA #CAR_LEFT_LIMIT ; check if player x position in bigger than the car left part
+  CMP player_x
+  BCS done
+
+  LDA #CAR_RIGHT_LIMIT
+  CMP player_x
+  BCC done
+
+  LDA #CAR_UP_LIMIT
+  CMP player_y
+  BNE done
+
+  LDA #PLAYER_STILL_STATE
+  STA player_prev_state
+  STA player_state
+
+  LDA #PLAYER_NOT_MOVING
+  STA player_dir
+  STA player_prev_dir
+  JMP done
+
+done:
+
+check_left_vehicle_limit:
+  LDA #CAR_LEFT_LIMIT
+  CMP player_x
+  BCC check_right_vehicle_limit 
+
+  LDA player_state
+  AND #PLAYER_JUMPING_STATE
+  BNE check_right_vehicle_limit 
+
+  LDA player_y
+  CMP #UP_LIMIT
+  BCS check_right_vehicle_limit 
+  
+  LDA player_y
+  CLC
+  ADC #JUMP_SPEED
+  STA player_y
+
+check_right_vehicle_limit: 
+  LDA #CAR_RIGHT_LIMIT
+  CMP player_x
+  BCS done_checking
+
+  LDA player_state
+  AND #PLAYER_JUMPING_STATE
+  BNE done_checking
+
+  LDA player_y
+  CMP #UP_LIMIT
+  BCS done_checking
+
+  LDA player_y
+  CLC
+  ADC #JUMP_SPEED
+  STA player_y
+
+done_checking:
+
+  PLA
+  TAY
+  PLA
+  TAX
+  PLA
+  PLP
+  RTS
+.endproc
 
 .proc update_pos
   PHP

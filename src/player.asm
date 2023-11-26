@@ -1,14 +1,13 @@
 .include "constants.inc"
 
 .segment "ZEROPAGE"
-frames:                         .res 1
-current_running_sprite:         .res 1
 player_x:                       .res 1
 player_y:                       .res 1
 player_dir:                     .res 1
 player_state:                   .res 1
 player_is_looking:              .res 1
-.exportzp frames, current_running_sprite, player_x, player_y, player_dir, player_is_looking, player_state
+.exportzp player_x, player_y, player_dir, player_is_looking, player_state, player_dir
+
 .importzp pad1
 
 .segment "CODE"
@@ -54,7 +53,6 @@ player_is_looking:              .res 1
   JSR set_flip_attribute
   JSR tick_player_state
   JSR tick_player_position
-
 
   PLA
   TAY

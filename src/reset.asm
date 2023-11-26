@@ -1,8 +1,5 @@
 .include "constants.inc"
 
-.segment "ZEROPAGE"
-.importzp frames, current_running_sprite
-
 .segment "CODE"
 .import main
 .import player_tick
@@ -32,11 +29,5 @@ clear_oam:
 vblankwait2:
 	BIT PPUSTATUS
 	BPL vblankwait2
-
-	LDA #$00
-	STA frames
-	LDA #$00
-	STA current_running_sprite
-
   JMP main
 .endproc
