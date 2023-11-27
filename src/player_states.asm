@@ -5,7 +5,7 @@ player_prev_state:                  .res 1
 current_sprite:                     .res 1
 counter_to_change_between_sprites:  .res 1 ; variable to know how fast will change between sprite, for example, between the two running sprites
 current_height_while_jumping:       .res 1
-.importzp player_is_looking, player_x, player_y, player_state, player_dir, player_prev_dir
+.importzp player_is_looking, player_x, player_y, player_state, player_dir, player_prev_dir, player_is_looking
 .exportzp player_prev_state
 
 .segment "CODE"
@@ -59,15 +59,22 @@ CHANGE_SPRITE_COUNTER    = 05
 
   LDA player_prev_state
   AND #PLAYER_JUMPING_STATE
-  BEQ not_jumping
+  BEQ finish_jumping
   LDA #PLAYER_JUMPING_STATE
   STA player_state
 
-not_jumping:
+finish_jumping:
   LDA player_prev_state
   AND #PLAYER_ATTACKING_STATE
-  BEQ check_still_state
+  BEQ finish_attacking
   LDA #PLAYER_ATTACKING_STATE
+  STA player_state
+
+finish_attacking:
+  LDA player_prev_state
+  AND #PLAYER_HURT_STATE
+  BEQ check_still_state
+  LDA #PLAYER_HURT_STATE
   STA player_state
 
 check_still_state:
@@ -97,12 +104,23 @@ check_jumping_state:
 check_attacking_state:
   LDA player_state
   AND #PLAYER_ATTACKING_STATE
-  BEQ check_dead_state
+  BEQ check_hurt_state
 
   JSR player_is_attacking_state
   JMP done
 
+check_hurt_state:
+  LDA player_state
+  AND #PLAYER_HURT_STATE
+  BEQ check_dead_state
+
+  JSR player_is_hurted_state
+  JMP done
+
 check_dead_state:
+  LDA player_state
+  AND #PLAYER_IS_DEAD_STATE
+  BEQ done
   JSR player_is_dead_state
   JMP done
 
@@ -327,6 +345,98 @@ done:
   TYA
   PHA
 
+  LDA #CHANGE_SPRITE_COUNTER              ; check to restart the state machine when counter is three times he change_sprite_counter constant
+  CLC
+  ADC #CHANGE_SPRITE_COUNTER
+  CLC
+  ADC #CHANGE_SPRITE_COUNTER
+  CLC
+  ADC #CHANGE_SPRITE_COUNTER
+  CMP counter_to_change_between_sprites
+  BEQ reset
+
+  LDA #PLAYER_HURT_STATE
+  STA player_state
+
+  LDA #PLAYER_HURTED_SPRITES
+  STA current_sprite
+
+  LDX #$00
+  LDY #$00
+
+  LDA counter_to_change_between_sprites
+  LSR A
+  bcc is_even
+
+  LDA #%10
+  CLC
+  ADC player_is_looking
+load_sprite_white_attribute_loop:
+  STA $0202, Y
+  INY 
+  INY
+  INY
+  INY
+
+  STA $0202, Y
+  INY 
+  INY
+  INY
+  INY
+
+  STA $0202, Y
+  INY 
+  INY
+  INY
+  INY
+
+  INX
+
+  CPX #$03
+  BNE load_sprite_white_attribute_loop
+  JMP done
+
+is_even:
+  LDA #%00
+  CLC
+  ADC player_is_looking
+load_sprite_normal_palette_loop:
+  STA $0202, Y
+  INY 
+  INY
+  INY
+  INY
+
+  STA $0202, Y
+  INY 
+  INY
+  INY
+  INY
+
+  STA $0202, Y
+  INY 
+  INY
+  INY
+  INY
+  
+  INX
+
+  CPX #$03
+  BNE load_sprite_normal_palette_loop
+  JMP done
+
+reset:
+  LDA #PLAYER_STILL_STATE
+  STA player_state
+  LDA #$00
+  STA counter_to_change_between_sprites
+
+done:
+  LDA counter_to_change_between_sprites
+  ASL A
+  INC counter_to_change_between_sprites
+  JSR draw_player_state
+
   PLA
   TAY
   PLA
@@ -344,11 +454,45 @@ done:
   TYA
   PHA
 
-  LDA #PLAYER_IS_DEAD_STATE
-  STA player_state
+  LDA #CHANGE_SPRITE_COUNTER              ; check to restart the state machine when counter is three times he change_sprite_counter constant
+  CLC
+  ADC #CHANGE_SPRITE_COUNTER
+  CLC
+  ADC #CHANGE_SPRITE_COUNTER
+  CLC
+  ADC #CHANGE_SPRITE_COUNTER
+  CMP counter_to_change_between_sprites
+  BEQ draw_sprite
+
+
+  LDA counter_to_change_between_sprites
+  LSR A
+  bcc is_even
+
   LDA #PLAYER_DEAD_SPRITES
   STA current_sprite
+
+
+  JMP done
+
+is_even:
+  LDA #PLAYER_STILL_SPRITES
+  STA current_sprite
+
+
+done:
+  LDA counter_to_change_between_sprites
+  ASL A
+  INC counter_to_change_between_sprites
+
+
+draw_sprite:
+  LDA #PLAYER_IS_DEAD_STATE
+  STA player_state
   JSR draw_player_state
+
+
+
 
   PLA
   TAY

@@ -88,8 +88,8 @@ palettes:
   .byte $3e, $11, $10, $27
 
   .byte $3e, $30, $36, $3e
-  .byte $3e, $30, $36, $3e
-  .byte $3e, $30, $36, $3e
+  .byte $3e, $30, $36, $0c
+  .byte $3e, $30, $30, $30
   .byte $3e, $30, $36, $3e
 
 .segment "CHR"

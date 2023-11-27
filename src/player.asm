@@ -6,7 +6,7 @@ player_y:                       .res 1
 player_dir:                     .res 1
 player_state:                   .res 1
 player_is_looking:              .res 1
-.exportzp player_x, player_y, player_dir, player_is_looking, player_state, player_dir
+.exportzp player_x, player_y, player_dir, player_is_looking, player_state, player_dir, player_is_looking
 
 .importzp pad1
 
@@ -71,6 +71,12 @@ player_is_looking:              .res 1
   TYA
   PHA
 
+  LDA player_state
+  AND #PLAYER_IS_DEAD_STATE
+  BEQ check_left
+  JMP done_checking
+
+check_left:
   LDA pad1        ; Load button presses
   AND #BTN_LEFT   ; Filter out all but Left
   BEQ check_right ; If result is zero, left not pressed
@@ -143,7 +149,7 @@ check_B_button:
   AND #BTN_B
   BEQ not_button_pressed
 
-  LDA #PLAYER_ATTACKING_STATE
+  LDA #PLAYER_IS_DEAD_STATE
   STA player_state
 
   JMP done_checking
