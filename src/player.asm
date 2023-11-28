@@ -6,7 +6,8 @@ player_y:                       .res 1
 player_dir:                     .res 1
 player_state:                   .res 1
 player_is_looking:              .res 1
-.exportzp player_x, player_y, player_dir, player_is_looking, player_state, player_dir, player_is_looking
+player_remaining_lifes:         .res 1
+.exportzp player_x, player_y, player_dir, player_is_looking, player_state, player_dir, player_is_looking, player_remaining_lifes
 
 .importzp pad1
 
@@ -48,7 +49,7 @@ player_is_looking:              .res 1
   PHA
   TYA
   PHA
-
+  
   JSR check_button
   JSR set_flip_attribute
   JSR tick_player_state
@@ -75,6 +76,7 @@ player_is_looking:              .res 1
   AND #PLAYER_IS_DEAD_STATE
   BEQ check_left
   JMP done_checking
+
 
 check_left:
   LDA pad1        ; Load button presses
@@ -149,7 +151,7 @@ check_B_button:
   AND #BTN_B
   BEQ not_button_pressed
 
-  LDA #PLAYER_IS_DEAD_STATE
+  LDA #PLAYER_HURT_STATE
   STA player_state
 
   JMP done_checking

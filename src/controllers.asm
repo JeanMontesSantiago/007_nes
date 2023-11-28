@@ -5,7 +5,7 @@
 .importzp pad2
 
 .segment "CODE"
-.export read_controller1
+.export read_controller1, read_controller2
 .proc read_controller1
   PHA
   TXA
@@ -44,7 +44,7 @@ get_buttons:
   PHA
   PHP
 
-  ; write a 1, then a 0, to CONTROLLER1
+  ; write a 1, then a 0, to CONTROLLER2
   ; to latch button states
   LDA #$01
   STA CONTROLLER2

@@ -51,6 +51,7 @@ PLAYER_ATTACKING_SPRITES      = 51
 PLAYER_DEAD_SPRITES           = 54
 
 
-JUMP_SPEED          = 02
-MAX_HEIGHT_FOR_JUMP      = 64
+PLAYER_MAX_LIFES              = 03
+JUMP_SPEED                    = 02
+MAX_HEIGHT_FOR_JUMP           = 64
 

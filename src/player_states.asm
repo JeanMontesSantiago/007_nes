@@ -5,7 +5,7 @@ player_prev_state:                  .res 1
 current_sprite:                     .res 1
 counter_to_change_between_sprites:  .res 1 ; variable to know how fast will change between sprite, for example, between the two running sprites
 current_height_while_jumping:       .res 1
-.importzp player_is_looking, player_x, player_y, player_state, player_dir, player_prev_dir, player_is_looking
+.importzp player_is_looking, player_x, player_y, player_state, player_dir, player_prev_dir, player_is_looking, player_remaining_lifes
 .exportzp player_prev_state
 
 .segment "CODE"
@@ -33,6 +33,9 @@ CHANGE_SPRITE_COUNTER    = 05
   LDA #PLAYER_STILL_SPRITES
   STA current_sprite
 
+  LDA #PLAYER_MAX_LIFES
+  STA player_remaining_lifes
+
   LDA #$00
   STA current_height_while_jumping
 
@@ -56,6 +59,7 @@ CHANGE_SPRITE_COUNTER    = 05
 
   LDA player_dir         ; store the direction of the player before some states like jumping change it
   STA player_prev_dir
+
 
   LDA player_prev_state
   AND #PLAYER_JUMPING_STATE
@@ -121,6 +125,7 @@ check_dead_state:
   LDA player_state
   AND #PLAYER_IS_DEAD_STATE
   BEQ done
+
   JSR player_is_dead_state
   JMP done
 
@@ -426,10 +431,13 @@ load_sprite_normal_palette_loop:
   JMP done
 
 reset:
+  DEC player_remaining_lifes
   LDA #PLAYER_STILL_STATE
   STA player_state
   LDA #$00
   STA counter_to_change_between_sprites
+  JSR check_remaining_lifes
+
 
 done:
   LDA counter_to_change_between_sprites
@@ -584,6 +592,32 @@ load_sprite_right_loop:
   BNE load_sprite_right_loop
 
 done:
+  PLA
+  TAY
+  PLA
+  TAX
+  PLA
+  PLP
+  RTS
+.endproc
+
+.proc check_remaining_lifes
+  PHP
+  PHA
+  TXA
+  PHA
+  TYA
+  PHA
+
+  LDA player_remaining_lifes
+  CMP #00
+  BNE done
+
+
+  JSR player_is_dead_state
+
+done:
+
   PLA
   TAY
   PLA
