@@ -14,8 +14,12 @@ pad2:     .res 1
 .import load_sprites
 .import init_player
 .import player_tick
+.import player2_tick
 .import read_controller1
+.import read_controller2
 .import player_init
+.import player2_init
+
 
 .proc irq_handler
   RTI
@@ -31,6 +35,9 @@ pad2:     .res 1
   JSR read_controller1
   JSR player_tick
 
+  JSR read_controller2
+  JSR player2_tick
+
 	STA $2005
 	STA $2005
   RTI
@@ -45,6 +52,8 @@ pad2:     .res 1
 ; Subrutina para cargar sprites en pantalla, para entregable 2 del Proyecto
 ;  JSR load_sprites
  JSR player_init
+
+ JSR player2_init
 
 
 vblankwait:       ; wait for another vblank before continuing

@@ -37,7 +37,7 @@ get_buttons:
   RTS
 .endproc
 
-.export read_controller1
+.export read_controller2
 .proc read_controller2
   PHA
   TXA

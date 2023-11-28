@@ -6,17 +6,6 @@ player_prev_dir:    .res 1
 .exportzp player_prev_dir
 
 .segment "CODE"
-PLAYER_SPEED        = 2
-
-LEFT_WALL           = 4
-RIGHT_WALL          = 230
-UP_LIMIT            = 160
-DOWN_LIMIT          = 210
-
-CAR_LEFT_LIMIT      = 56
-CAR_RIGHT_LIMIT     = 144
-CAR_UP_LIMIT        = 136
-CAR_DOWN_LIMIT      = 168
 
 .export init_player_position
 .proc init_player_position

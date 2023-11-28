@@ -60,3 +60,16 @@ MAX_HEIGHT_FOR_JUMP           = 64
 HEARTS_X_POSITION       = 16
 HEARTS_Y_POSITION       = 16
 
+PLAYER_SPEED        = 2
+
+LEFT_WALL           = 4
+RIGHT_WALL          = 230
+UP_LIMIT            = 160
+DOWN_LIMIT          = 210
+
+CAR_LEFT_LIMIT      = 56
+CAR_RIGHT_LIMIT     = 144
+CAR_UP_LIMIT        = 136
+CAR_DOWN_LIMIT      = 168
+
+CHANGE_SPRITE_COUNTER    = 05
