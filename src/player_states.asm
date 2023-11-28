@@ -60,6 +60,8 @@ CHANGE_SPRITE_COUNTER    = 05
   LDA player_dir         ; store the direction of the player before some states like jumping change it
   STA player_prev_dir
 
+  JSR draw_player_life
+
 
   LDA player_prev_state
   AND #PLAYER_JUMPING_STATE
@@ -615,6 +617,193 @@ done:
 
 
   JSR player_is_dead_state
+
+done:
+
+  PLA
+  TAY
+  PLA
+  TAX
+  PLA
+  PLP
+  RTS
+.endproc
+
+.proc draw_player_life
+  PHP
+  PHA
+  TXA
+  PHA
+  TYA
+  PHA
+
+load_x_y_tiles:
+
+  LDX #$00
+  LDY #$24
+  LDA #HEARTS_Y_POSITION
+load_hearts_y_position:
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  CLC
+  ADC #$08
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  CLC
+  ADC #$0a
+
+  INX
+
+  CPX #PLAYER_MAX_LIFES
+  BNE load_hearts_y_position
+
+
+  LDX #$00
+  LDY #$27
+  LDA #HEARTS_X_POSITION
+load_hearts_x_position:
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  CLC
+  ADC #$08
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  SEC
+  SBC #$08
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  CLC
+  ADC #$08
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  SEC
+  SBC #$08
+
+  INX
+  CPX #PLAYER_MAX_LIFES
+  BNE load_hearts_x_position
+
+
+
+  LDX #$00
+  LDY #$25
+  LDA #FULL_HEART_SPRITES
+load_remaining_hearts_tiles:
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  CLC
+  ADC #$01
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  CLC
+  ADC #15
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  CLC
+  ADC #$01
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  INX
+  LDA #FULL_HEART_SPRITES
+  CPX player_remaining_lifes
+  BNE load_remaining_hearts_tiles
+
+check_empty_hearts:
+
+  LDA player_remaining_lifes
+  CMP #PLAYER_MAX_LIFES
+  BEQ done
+
+  LDX player_remaining_lifes
+  LDA #EMPTY_HEART_SPRITES
+load_empty_hearts_tiles:
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  CLC
+  ADC #$01
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  CLC
+  ADC #15
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  CLC
+  ADC #$01
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  INX
+  LDA #EMPTY_HEART_SPRITES
+  CPX #PLAYER_MAX_LIFES
+  BNE load_empty_hearts_tiles
+
 
 done:
 
