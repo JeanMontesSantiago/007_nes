@@ -12,9 +12,10 @@ player2_prev_state:                   .res 1
 current_sprite_2:                     .res 1
 counter_to_change_between_sprites_2:  .res 1 ; variable to know how fast will change between sprite, for example, between the two running sprites
 current_height_while_jumping_2:       .res 1
+did_player2_collide:                  .res 1
+.exportzp player2_x, player2_y
 
-
-.importzp pad2
+.importzp pad2, player_x, player_y
 
 .segment "CODE"
 .export player2_init
@@ -25,6 +26,38 @@ current_height_while_jumping_2:       .res 1
   PHA
   TYA
   PHA
+
+  LDX #$00
+  LDY #$4a
+  LDA #%01
+load_attributes:
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  INX
+  CPX #PLAYER_MAX_LIFES
+  BNE load_attributes
 
   JSR init_player2_state
   JSR tick_player2_state
@@ -85,6 +118,12 @@ check_left:
   LDA #PLAYER_IS_MOVING_LEFT
   STA player2_dir
 
+  JSR check_left_collision_2
+
+  LDA did_player2_collide
+  AND #PLAYER_COLLIDES
+  BNE check_right
+
   LDA #PLAYER_RUNNING_STATE
   STA player2_state
 
@@ -100,6 +139,12 @@ check_right:
 
   LDA #PLAYER_IS_MOVING_RIGHT
   STA player2_dir
+
+  JSR check_right_collision_2
+
+  LDA did_player2_collide
+  AND #PLAYER_COLLIDES
+  BNE check_up
 
   LDA #PLAYER_RUNNING_STATE
   STA player2_state
@@ -147,7 +192,7 @@ check_B_button:
   AND #BTN_B
   BEQ not_button_pressed
 
-  LDA #PLAYER_HURT_STATE
+  LDA #PLAYER_ATTACKING_STATE
   STA player2_state
 
   JMP done_checking
@@ -176,7 +221,7 @@ done_checking:
   PHA
   TYA
   PHA
-  
+
   LDX #$00
   LDY #$00
 load_attributes:
@@ -574,7 +619,7 @@ done_checking:
   LDA player2_dir         ; store the direction of the player before some states like jumping change it
   STA player2_prev_dir
 
-;   JSR draw_player2_life
+  JSR draw_player2_life
 
 
   LDA player2_prev_state
@@ -1143,189 +1188,286 @@ done:
   RTS
 .endproc
 
-; .proc draw_player2_life
-;   PHP
-;   PHA
-;   TXA
-;   PHA
-;   TYA
-;   PHA
+.proc draw_player2_life
+  PHP
+  PHA
+  TXA
+  PHA
+  TYA
+  PHA
 
-; load_x_y_tiles:
-
-;   LDX #$00
-;   LDY #$24
-;   LDA #HEARTS_Y_POSITION
-; load_hearts_y_position:
-;   STA $0200, Y
-;   INY
-;   INY
-;   INY
-;   INY
-
-;   STA $0200, Y
-;   INY
-;   INY
-;   INY
-;   INY
-
-;   CLC
-;   ADC #$08
-;   STA $0200, Y
-;   INY
-;   INY
-;   INY
-;   INY
-
-;   STA $0200, Y
-;   INY
-;   INY
-;   INY
-;   INY
-
-;   CLC
-;   ADC #$0a
-
-;   INX
-
-;   CPX #PLAYER_MAX_LIFES
-;   BNE load_hearts_y_position
-
-
-;   LDX #$00
-;   LDY #$27
-;   LDA #HEARTS_X_POSITION
-; load_hearts_x_position:
-;   STA $0200, Y
-;   INY
-;   INY
-;   INY
-;   INY
-
-;   CLC
-;   ADC #$08
-;   STA $0200, Y
-;   INY
-;   INY
-;   INY
-;   INY
-
-;   SEC
-;   SBC #$08
-;   STA $0200, Y
-;   INY
-;   INY
-;   INY
-;   INY
-
-;   CLC
-;   ADC #$08
-;   STA $0200, Y
-;   INY
-;   INY
-;   INY
-;   INY
-
-;   SEC
-;   SBC #$08
-
-;   INX
-;   CPX #PLAYER_MAX_LIFES
-;   BNE load_hearts_x_position
+load_x_y_tiles:
 
 
 
-;   LDX #$00
-;   LDY #$25
-;   LDA #FULL_HEART_SPRITES
-; load_remaining_hearts_tiles:
-;   STA $0200, Y
-;   INY
-;   INY
-;   INY
-;   INY
+  LDX #$00
+  LDY #$48
+  LDA #HEARTS_2_Y_POSITION
+load_hearts_y_position:
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
 
-;   CLC
-;   ADC #$01
-;   STA $0200, Y
-;   INY
-;   INY
-;   INY
-;   INY
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
 
-;   CLC
-;   ADC #15
-;   STA $0200, Y
-;   INY
-;   INY
-;   INY
-;   INY
+  CLC
+  ADC #$08
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
 
-;   CLC
-;   ADC #$01
-;   STA $0200, Y
-;   INY
-;   INY
-;   INY
-;   INY
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
 
-;   INX
-;   LDA #FULL_HEART_SPRITES
-;   CPX player2_remaining_lifes
-;   BNE load_remaining_hearts_tiles
+  CLC
+  ADC #$0a
 
-; check_empty_hearts:
+  INX
 
-;   LDA player2_remaining_lifes
-;   CMP #PLAYER_MAX_LIFES
-;   BEQ done
-
-;   LDX player2_remaining_lifes
-;   LDA #EMPTY_HEART_SPRITES
-; load_empty_hearts_tiles:
-;   STA $0200, Y
-;   INY
-;   INY
-;   INY
-;   INY
-
-;   CLC
-;   ADC #$01
-;   STA $0200, Y
-;   INY
-;   INY
-;   INY
-;   INY
-
-;   CLC
-;   ADC #15
-;   STA $0200, Y
-;   INY
-;   INY
-;   INY
-;   INY
-
-;   CLC
-;   ADC #$01
-;   STA $0200, Y
-;   INY
-;   INY
-;   INY
-;   INY
-
-;   INX
-;   LDA #EMPTY_HEART_SPRITES
-;   CPX #PLAYER_MAX_LIFES
-;   BNE load_empty_hearts_tiles
+  CPX #PLAYER_MAX_LIFES
+  BNE load_hearts_y_position
 
 
-; done:
+  LDX #$00
+  LDY #$4b
+  LDA #HEARTS_2_X_POSITION
+load_hearts_x_position:
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
 
-;   PLA
-;   TAY
-;   PLA
-;   TAX
-;   PLA
-;   PLP
-;   RTS
-; .endproc
+  CLC
+  ADC #$08
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  SEC
+  SBC #$08
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  CLC
+  ADC #$08
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  SEC
+  SBC #$08
+
+  INX
+  CPX #PLAYER_MAX_LIFES
+  BNE load_hearts_x_position
+
+  LDA player2_remaining_lifes
+  CMP #$00
+  BEQ check_empty_hearts
+
+  LDX #$00
+  LDY #$49
+  LDA #FULL_HEART_SPRITES
+load_remaining_hearts_tiles:
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  CLC
+  ADC #$01
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  CLC
+  ADC #15
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  CLC
+  ADC #$01
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  INX
+  LDA #FULL_HEART_SPRITES
+  CPX player2_remaining_lifes
+  BNE load_remaining_hearts_tiles
+
+check_empty_hearts:
+
+  LDA player2_remaining_lifes
+  CMP #PLAYER_MAX_LIFES
+  BEQ done
+
+  LDX player2_remaining_lifes
+  LDA #EMPTY_HEART_SPRITES
+load_empty_hearts_tiles:
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  CLC
+  ADC #$01
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  CLC
+  ADC #15
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  CLC
+  ADC #$01
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  INX
+  LDA #EMPTY_HEART_SPRITES
+  CPX #PLAYER_MAX_LIFES
+  BNE load_empty_hearts_tiles
+
+
+done:
+
+  PLA
+  TAY
+  PLA
+  TAX
+  PLA
+  PLP
+  RTS
+.endproc
+
+.proc check_left_collision_2
+  PHP
+  PHA
+  TXA
+  PHA
+  TYA
+  PHA
+
+  LDA player_y
+  SEC 
+  SBC #24
+  CMP player2_y
+  BCS do_not_collide
+
+  LDA player_y
+  CLC 
+  ADC #12
+  CMP player2_y
+  BCC do_not_collide
+
+  LDA player2_x  ; check left collision
+  SEC
+  SBC #12
+  CMP player_x
+  BNE do_not_collide
+
+collide:
+  LDA #PLAYER_COLLIDES
+  STA did_player2_collide
+  JMP done
+
+do_not_collide:
+  LDA #PLAYER_DO_NOT_COLLIDES
+  STA did_player2_collide
+
+done:
+
+  PLA
+  TAY
+  PLA
+  TAX
+  PLA
+  PLP
+  RTS
+.endproc
+
+
+.proc check_right_collision_2
+  PHP
+  PHA
+  TXA
+  PHA
+  TYA
+  PHA
+
+  LDA player_y
+  SEC 
+  SBC #24
+  CMP player2_y
+  BCS do_not_collide
+
+  LDA player_y
+  CLC 
+  ADC #12
+  CMP player2_y
+  BCC do_not_collide
+
+  LDA player2_x  ; check left collision
+  CLC
+  ADC #12
+  CMP player_x
+  BNE do_not_collide
+
+collide:
+  LDA #PLAYER_COLLIDES
+  STA did_player2_collide
+  JMP done
+
+do_not_collide:
+  LDA #PLAYER_DO_NOT_COLLIDES
+  STA did_player2_collide
+
+done:
+
+  PLA
+  TAY
+  PLA
+  TAX
+  PLA
+  PLP
+  RTS
+.endproc

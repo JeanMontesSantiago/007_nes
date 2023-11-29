@@ -51,9 +51,11 @@ pad2:     .res 1
  JSR draw_background
 ; Subrutina para cargar sprites en pantalla, para entregable 2 del Proyecto
 ;  JSR load_sprites
+  JSR player2_init
+
  JSR player_init
 
- JSR player2_init
+
 
 
 vblankwait:       ; wait for another vblank before continuing

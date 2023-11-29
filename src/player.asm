@@ -7,9 +7,10 @@ player_dir:                     .res 1
 player_state:                   .res 1
 player_is_looking:              .res 1
 player_remaining_lifes:         .res 1
+did_player_collide:             .res 1
 .exportzp player_x, player_y, player_dir, player_is_looking, player_state, player_dir, player_is_looking, player_remaining_lifes
 
-.importzp pad1
+.importzp pad1, player2_x, player2_y
 
 .segment "CODE"
 
@@ -26,6 +27,41 @@ player_remaining_lifes:         .res 1
   PHA
   TYA
   PHA
+
+  LDX #$00
+  LDY #$b2
+  LDA #$00
+load_attributes:
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  STA $0200, Y
+  INY
+  INY
+  INY
+  INY
+
+  INX
+  CPX #PLAYER_MAX_LIFES
+  BNE load_attributes
+
+  LDA #PLAYER_DO_NOT_COLLIDES
+  STA did_player_collide
 
   JSR init_player_state
   JSR tick_player_state
@@ -89,6 +125,12 @@ check_left:
   LDA #PLAYER_IS_MOVING_LEFT
   STA player_dir
 
+  JSR check_left_collision
+
+  LDA did_player_collide
+  AND #PLAYER_COLLIDES
+  BNE check_right
+
   LDA #PLAYER_RUNNING_STATE
   STA player_state
 
@@ -104,6 +146,12 @@ check_right:
 
   LDA #PLAYER_IS_MOVING_RIGHT
   STA player_dir
+
+  JSR check_right_collision
+
+  LDA did_player_collide
+  AND #PLAYER_COLLIDES
+  BNE check_up
 
   LDA #PLAYER_RUNNING_STATE
   STA player_state
@@ -151,7 +199,7 @@ check_B_button:
   AND #BTN_B
   BEQ not_button_pressed
 
-  LDA #PLAYER_HURT_STATE
+  LDA #PLAYER_ATTACKING_STATE
   STA player_state
 
   JMP done_checking
@@ -187,6 +235,99 @@ load_attributes:
   CPX #$09
 
   BNE load_attributes
+.endproc
+
+.proc check_left_collision
+  PHP
+  PHA
+  TXA
+  PHA
+  TYA
+  PHA
+
+  LDA player2_y
+  SEC 
+  SBC #24
+  CMP player_y
+  BCS do_not_collide
+
+  LDA player2_y
+  CLC 
+  ADC #12
+  CMP player_y
+  BCC do_not_collide
+
+  LDA player_x  ; check left collision
+  SEC
+  SBC #12
+  CMP player2_x
+  BNE do_not_collide
+
+collide:
+  LDA #PLAYER_COLLIDES
+  STA did_player_collide
+  JMP done
+
+do_not_collide:
+  LDA #PLAYER_DO_NOT_COLLIDES
+  STA did_player_collide
+
+done:
+
+  PLA
+  TAY
+  PLA
+  TAX
+  PLA
+  PLP
+  RTS
+.endproc
+
+
+.proc check_right_collision
+  PHP
+  PHA
+  TXA
+  PHA
+  TYA
+  PHA
+
+  LDA player2_y
+  SEC 
+  SBC #24
+  CMP player_y
+  BCS do_not_collide
+
+  LDA player2_y
+  CLC 
+  ADC #12
+  CMP player_y
+  BCC do_not_collide
+
+  LDA player_x  ; check left collision
+  CLC
+  ADC #12
+  CMP player2_x
+  BNE do_not_collide
+
+collide:
+  LDA #PLAYER_COLLIDES
+  STA did_player_collide
+  JMP done
+
+do_not_collide:
+  LDA #PLAYER_DO_NOT_COLLIDES
+  STA did_player_collide
+
+done:
+
+  PLA
+  TAY
+  PLA
+  TAX
+  PLA
+  PLP
+  RTS
 .endproc
 
 
