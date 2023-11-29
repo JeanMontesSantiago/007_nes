@@ -343,6 +343,7 @@ done:
   RTS
 .endproc
 
+.export player_is_hurted_state
 .proc player_is_hurted_state
   PHP
   PHA

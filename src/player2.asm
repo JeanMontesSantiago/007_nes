@@ -13,7 +13,7 @@ current_sprite_2:                     .res 1
 counter_to_change_between_sprites_2:  .res 1 ; variable to know how fast will change between sprite, for example, between the two running sprites
 current_height_while_jumping_2:       .res 1
 did_player2_collide:                  .res 1
-.exportzp player2_x, player2_y
+.exportzp player2_x, player2_y, player2_state, player2_dir, player2_is_looking
 
 .importzp pad2, player_x, player_y
 
@@ -81,9 +81,9 @@ load_attributes:
   TYA
   PHA
   
-  JSR check_button_2
   JSR set_flip_attribute_2
   JSR tick_player2_state
+  JSR check_button_2
   JSR tick_player2_position
 
   PLA
@@ -903,6 +903,7 @@ done:
   RTS
 .endproc
 
+.export player2_is_hurted_state
 .proc player2_is_hurted_state
   PHP
   PHA

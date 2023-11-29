@@ -86,9 +86,10 @@ load_attributes:
   TYA
   PHA
   
-  JSR check_button
+
   JSR set_flip_attribute
   JSR tick_player_state
+  JSR check_button
   JSR tick_player_position
 
   PLA
